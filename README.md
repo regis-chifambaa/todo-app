@@ -4,7 +4,7 @@ A clean, fully functional to-do list app built with vanilla HTML, CSS, and JavaS
 
 ## 🔗 Live Demo
 
-> [Add your GitHub Pages link here once deployed]
+> [GitHub Pages link ](https://regis-chifambaa.github.io/todo-app/)
 
 ## 📸 Preview
 
