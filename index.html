@@ -23,12 +23,12 @@
         </div>
 
         <div class="filters">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="active">Active</button>
-            <button class="filter-btn" data-filter="completed">Completed</button>
+            <button class="filter-btn active" data-filter="all" aria-label="Show all tasks">All</button>
+            <button class="filter-btn" data-filter="active" aria-label="Show active tasks only">Active</button>
+            <button class="filter-btn" data-filter="completed" aria-label="Show completed tasks only">Completed</button>
         </div>
 
-        <ul id="taskList"></ul>
+        <ul id="taskList" role="list"></ul>
 
         <div class="empty-state" id="emptyState">
             <span>✓</span>
