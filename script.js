@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadTasks();
     setupEnterKey();
     setupFilters();
+    setupEventDelegation();
     updateUI();
 });
 
@@ -40,6 +41,26 @@ function applyFilter() {
     updateUI();
 }
 
+// ── Event Delegation for task list ─────────────────────
+function setupEventDelegation() {
+    const taskList = document.getElementById("taskList");
+    taskList.addEventListener("click", (e) => {
+        const deleteBtn = e.target.closest(".delete-btn");
+        const checkBox = e.target.closest(".check-box");
+        const taskText = e.target.closest(".task-text");
+
+        if (deleteBtn) {
+            const li = deleteBtn.closest("li");
+            li.remove();
+            updateStorage();
+            applyFilter();
+        } else if (checkBox || taskText) {
+            const li = checkBox ? checkBox.closest("li") : taskText.closest("li");
+            toggleComplete(li);
+        }
+    });
+}
+
 // ── Add task ───────────────────────────────────────────
 function addTask() {
     const taskInput = document.getElementById("taskInput");
@@ -57,29 +78,23 @@ function createTaskElement(text, completed) {
     const taskList = document.getElementById("taskList");
 
     const li = document.createElement("li");
+    li.setAttribute("role", "listitem");
     if (completed) li.classList.add("completed");
 
     // Checkbox
     const checkBox = document.createElement("div");
     checkBox.className = "check-box" + (completed ? " checked" : "");
-    checkBox.addEventListener("click", () => toggleComplete(li, checkBox, span));
 
     // Task text
     const span = document.createElement("span");
     span.className = "task-text";
     span.textContent = text;
-    span.addEventListener("click", () => toggleComplete(li, checkBox, span));
 
     // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "✕";
     deleteBtn.className = "delete-btn";
     deleteBtn.setAttribute("aria-label", "Delete task");
-    deleteBtn.addEventListener("click", () => {
-        li.remove();
-        updateStorage();
-        applyFilter();
-    });
 
     li.appendChild(checkBox);
     li.appendChild(span);
@@ -87,9 +102,9 @@ function createTaskElement(text, completed) {
     taskList.appendChild(li);
 }
 
-function toggleComplete(li, checkBox, span) {
+function toggleComplete(li) {
     li.classList.toggle("completed");
-    checkBox.classList.toggle("checked");
+    li.querySelector(".check-box").classList.toggle("checked");
     updateStorage();
     applyFilter();
 }
@@ -124,27 +139,56 @@ function updateUI() {
 
 // ── localStorage helpers ───────────────────────────────
 function saveTask(text, completed) {
-    const tasks = getTasks();
-    tasks.push({ text, completed });
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+    try {
+        const tasks = getTasks();
+        tasks.push({ text, completed });
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    } catch (error) {
+        if (error.name === "QuotaExceededError") {
+            console.error("localStorage quota exceeded. Could not save task.");
+        } else if (error.name === "SecurityError") {
+            console.error("localStorage is not accessible. Tasks will not persist.");
+        } else {
+            console.error("Error saving task:", error);
+        }
+    }
 }
 
 function getTasks() {
-    return JSON.parse(localStorage.getItem("tasks")) || [];
+    try {
+        return JSON.parse(localStorage.getItem("tasks")) || [];
+    } catch (error) {
+        console.error("Error retrieving tasks:", error);
+        return [];
+    }
 }
 
 function loadTasks() {
-    getTasks().forEach(task => createTaskElement(task.text, task.completed));
+    try {
+        getTasks().forEach(task => createTaskElement(task.text, task.completed));
+    } catch (error) {
+        console.error("Error loading tasks:", error);
+    }
 }
 
 function updateStorage() {
-    const tasks = [];
-    document.querySelectorAll("#taskList li").forEach(li => {
-        tasks.push({
-            text:      li.querySelector(".task-text").textContent,
-            completed: li.classList.contains("completed")
+    try {
+        const tasks = [];
+        document.querySelectorAll("#taskList li").forEach(li => {
+            tasks.push({
+                text:      li.querySelector(".task-text").textContent,
+                completed: li.classList.contains("completed")
+            });
         });
-    });
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-    updateUI();
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        updateUI();
+    } catch (error) {
+        if (error.name === "QuotaExceededError") {
+            console.error("localStorage quota exceeded. Could not update storage.");
+        } else if (error.name === "SecurityError") {
+            console.error("localStorage is not accessible. Changes will not persist.");
+        } else {
+            console.error("Error updating storage:", error);
+        }
+    }
 }
